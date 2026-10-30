@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>메디컬 블록 챌린지 - Medical Block Challenge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(145deg, #e0f4ff 0%, #d8fbf4 50%, #f0faff 100%);
+      --primary-blue: #38bdf8;
+      --deep-blue: #0284c7;
+      --mint: #34d399;
+      --deep-mint: #059669;
+      --light-mint: #e6fffa;
+      --sky-light: #f0f9ff;
+      --board-bg: #cce7f8;
+      --cell-empty: #e4f2fb;
+      --cell-border: #bce0f5;
+      --card-white: #ffffff;
+      --text-main: #1e293b;
+      --text-sub: #64748b;
+      --accent-coral: #fb7185;
+      --accent-yellow: #facc15;
+      --shadow-soft: 0 8px 24px rgba(56, 189, 248, 0.15);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-main);
+      overflow-x: hidden;
+      padding: 10px;
+    }
+
+    /* 모바일 세로형 컨테이너 */
+    #game-container {
+      width: 100%;
+      max-width: 440px;
+      height: 98vh;
+      max-height: 860px;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      border-radius: 28px;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 16px 40px rgba(14, 165, 233, 0.18);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      padding: 14px 14px 10px 14px;
+    }
+
+    /* 상단 헤더 및 통계 카드 */
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .game-logo {
+      font-family: 'Jua', sans-serif;
+      font-size: 20px;
+      color: var(--deep-blue);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-shadow: 1px 1px 0 #fff;
+    }
+
+    .game-logo span.badge {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 11px;
+      background: linear-gradient(135deg, var(--mint), var(--deep-mint));
+      color: white;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    .sound-btn, .restart-btn-small {
+      background: white;
+      border: 2px solid #bae6fd;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      transition: transform 0.1s, background 0.2s;
+    }
+    .sound-btn:active, .restart-btn-small:active {
+      transform: scale(0.92);
+    }
+
+    /* 통계 대시보드 */
+    .stats-dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 6px 8px;
+      text-align: center;
+      border: 2px solid #e0f2fe;
+      box-shadow: 0 3px 8px rgba(186, 230, 253, 0.35);
+      position: relative;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .stat-val {
+      font-family: 'Jua', sans-serif;
+      font-size: 18px;
+      color: var(--deep-blue);
+      margin-top: 1px;
+    }
+
+    .stat-val.score {
+      color: #0369a1;
+      font-size: 21px;
+    }
+
+    .stat-val.quiz-rate {
+      color: var(--deep-mint);
+    }
+
+    /* 퀴즈 게이지 바 */
+    .quiz-gauge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #eff6ff;
+      border-radius: 12px;
+      padding: 4px 10px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .quiz-gauge-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1d4ed8;
+      white-space: nowrap;
+    }
+
+    .gauge-track {
+      flex: 1;
+      height: 9px;
+      background: #dbeafe;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gauge-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #34d399);
+      border-radius: 10px;
+      transition: width 0.35s ease-out;
+    }
+
+    /* 메인 10x10 게임 보드 */
+    .board-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1/1;
+      background: var(--board-bg);
+      border-radius: var(--radius-lg);
+      padding: 6px;
+      box-shadow: inset 0 3px 8px rgba(0,0,0,0.06), 0 6px 14px rgba(186, 230, 253, 0.4);
+      border: 3px solid #b7e2fb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .grid-board {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 3px;
+    }
+
+    .grid-cell {
+      background: var(--cell-empty);
+      border-radius: 6px;
+      border: 1px solid var(--cell-border);
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+
+    /* 하이라이트 (놓을 수 있는 위치 미리보기) */
+    .grid-cell.highlight-valid {
+      background: #99f6e4 !important;
+      border-color: #2dd4bf !important;
+      transform: scale(0.96);
+      box-shadow: inset 0 0 6px rgba(13, 148, 136, 0.4);
+    }
+    .grid-cell.highlight-invalid {
+      background: #fecdd3 !important;
+      border-color: #fb7185 !important;
+    }
+
+    /* 블록 채워진 스타일 (의약 테마 텍스처/아이콘) */
+    .grid-cell.filled {
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: 0 3px 5px rgba(0,0,0,0.12), inset 0 1px 2px rgba(255,255,255,0.8);
+      animation: cellPop 0.22s ease-out forwards;
+    }
+
+    .grid-cell.filled .cell-icon {
+      font-size: 14px;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+    }
+
+    @keyframes cellPop {
+      0% { transform: scale(0.7); opacity: 0.6; }
+      70% { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* 줄 제거 애니메이션 */
+    .grid-cell.clearing {
+      animation: clearEffect 0.38s ease-in forwards;
+      z-index: 5;
+    }
+
+    @keyframes clearEffect {
+      0% { transform: scale(1); filter: brightness(1.5); }
+      50% { transform: scale(1.22) rotate(8deg); filter: brightness(2); background-color: #fef08a !important; }
+      100% { transform: scale(0.1); opacity: 0; }
+    }
+
+    /* 콤보 / 멀티라인 플로팅 텍스트 */
+    .floating-text {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Jua', sans-serif;
+      font-size: 26px;
+      color: #f59e0b;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.25), 2px 2px 0 #fff;
+      pointer-events: none;
+      z-index: 30;
+      animation: floatUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      white-space: nowrap;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translate(-50%, -20%) scale(0.6); opacity: 0; }
+      30% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+      80% { transform: translate(-50%, -85%) scale(1.05); opacity: 1; }
+      100% { transform: translate(-50%, -110%) scale(0.9); opacity: 0; }
+    }
+
+    /* 하단 대기 블록 3개 영역 */
+    .dock-container {
+      flex: 1;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 6px 4px 4px 4px;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .dock-slot {
+      flex: 1;
+      height: 100px;
+      max-height: 110px;
+      background: white;
+      border: 2px dashed #bfdbfe;
+      border-radius: var(--radius-md);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .dock-slot.empty {
+      border: 2px dashed #e2e8f0;
+      background: rgba(255,255,255,0.4);
+    }
+
+    .dock-slot.unplaceable {
+      opacity: 0.42;
+      filter: grayscale(0.5);
+    }
+
+    /* 블록 프리뷰 모양 */
+    .shape-preview {
+      display: grid;
+      gap: 2px;
+      cursor: grab;
+      touch-action: none;
+      padding: 6px;
+      transition: transform 0.15s ease;
+    }
+
+    .shape-preview:active {
+      cursor: grabbing;
+    }
+
+    .preview-cell {
+      width: 17px;
+      height: 17px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    /* 드래그 중인 플로팅 블록 클론 */
+    #drag-proxy {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      transform: translate(-50%, -60%);
+      opacity: 0.95;
+      filter: drop-shadow(0 14px 22px rgba(14, 165, 233, 0.45));
+    }
+
+    #drag-proxy .preview-cell {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      font-size: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* 모달 공통 레이아웃 (퀴즈 & 게임오버) */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 380px;
+      padding: 22px 18px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      border: 3px solid #e0f2fe;
+      animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes modalPop {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-icon {
+      font-size: 46px;
+      margin-bottom: 6px;
+    }
+
+    .modal-title {
+      font-family: 'Jua', sans-serif;
+      font-size: 22px;
+      color: var(--deep-blue);
+      margin-bottom: 6px;
+    }
+
+    .modal-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    /* 퀴즈 박스 스타일 */
+    .quiz-category-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e0f2fe;
+      color: var(--deep-blue);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+
+    .quiz-question {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.45;
+      margin-bottom: 16px;
+      text-align: left;
+      background: #f8fafc;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border-left: 4px solid var(--primary-blue);
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .quiz-opt-btn {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.18s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .quiz-opt-btn:active {
+      transform: scale(0.98);
+    }
+
+    .quiz-opt-btn .opt-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .quiz-opt-btn.correct {
+      background: #ecfdf5 !important;
+      border-color: #34d399 !important;
+      color: #065f46 !important;
+    }
+    .quiz-opt-btn.correct .opt-num {
+      background: #34d399;
+      color: white;
+    }
+
+    .quiz-opt-btn.wrong {
+      background: #fff1f2 !important;
+      border-color: #f87171 !important;
+      color: #991b1b !important;
+    }
+    .quiz-opt-btn.wrong .opt-num {
+      background: #f87171;
+      color: white;
+    }
+
+    .quiz-explanation-box {
+      display: none;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+      color: #1e3a8a;
+      line-height: 1.45;
+      margin-bottom: 14px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .quiz-explanation-box strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .quiz-disclaimer {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+
+    /* 큰 인터랙션 버튼 */
+    .primary-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 13px;
+      font-family: 'Jua', sans-serif;
+      font-size: 17px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+      transition: transform 0.12s, box-shadow 0.12s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .primary-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+    }
+
+    /* 게임오버 스코어 요약 박스 */
+    .gameover-summary {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .gameover-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .gameover-row .highlight {
+      font-family: 'Jua', sans-serif;
+      font-size: 18px;
+      color: var(--deep-blue);
+    }
+
+    /* 교육 정보 배너 */
+    .edu-banner {
+      font-size: 11px;
+      color: #0369a1;
+      background: #e0f2fe;
+      border-radius: 10px;
+      padding: 5px 8px;
+      text-align: center;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <!-- 상단 헤더 & 컨트롤 -->
+  <header>
+    <div class="top-bar">
+      <div class="game-logo">
+        💊 메디컬 블록 <span class="badge">Edu Puzzle</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button id="btn-sound" class="sound-btn" title="사운드 온/오프">🔔</button>
+        <button id="btn-restart" class="restart-btn-small" title="게임 다시시작">🔄</button>
+      </div>
+    </div>
+
+    <!-- 스코어 / 레벨 / 퀴즈 정답률 -->
+    <div class="stats-dashboard">
+      <div class="stat-card">
+        <div class="stat-label">🏆 점수</div>
+        <div id="ui-score" class="stat-val score">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">⭐ 최고기록</div>
+        <div id="ui-best" class="stat-val">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🎓 퀴즈 정답률</div>
+        <div id="ui-quiz-rate" class="stat-val quiz-rate">0%</div>
+      </div>
+    </div>
+
+    <!-- 퀴즈 게이지 -->
+    <div class="quiz-gauge-wrap">
+      <span class="quiz-gauge-text">🧪 퀴즈 챌린지</span>
+      <div class="gauge-track">
+        <div id="gauge-fill" class="gauge-fill"></div>
+      </div>
+      <span id="gauge-text" style="font-size: 11px; font-weight:700; color:#0284c7;">0 / 250</span>
+    </div>
+  </header>
+
+  <!-- 10x10 게임 보드 -->
+  <div class="board-container" id="board-container">
+    <div class="grid-board" id="game-board"></div>
+  </div>
+
+  <div class="edu-banner">
+    💡 한 줄을 맞추면 제약 연구 진행! 250점마다 퀴즈가 열립니다.
+  </div>
+
+  <!-- 하단 3개 대기 블록 슬롯 -->
+  <div class="dock-container" id="dock-container">
+    <div class="dock-slot" id="slot-0"></div>
+    <div class="dock-slot" id="slot-1"></div>
+    <div class="dock-slot" id="slot-2"></div>
+  </div>
+</div>
+
+<!-- 드래그 중 블록 추적 프록시 -->
+<div id="drag-proxy"></div>
+
+<!-- 퀴즈 모달 팝업 -->
+<div class="modal-overlay" id="quiz-modal">
+  <div class="modal-card">
+    <div class="modal-icon">🩺</div>
+    <span id="quiz-category" class="quiz-category-tag">의약품 안전 상식</span>
+    <h3 class="modal-title">제약 지식 퀴즈!</h3>
+    <p class="modal-subtitle">문제를 맞히면 <strong>보너스 100점</strong>을 획득합니다!</p>
+
+    <div id="quiz-question" class="quiz-question"></div>
+    <div id="quiz-options" class="quiz-options"></div>
+
+    <div id="quiz-explanation" class="quiz-explanation-box">
+      <strong id="quiz-result-title">💡 정답 해설</strong>
+      <p id="quiz-explanation-text"></p>
+    </div>
+
+    <p class="quiz-disclaimer">※ 본 퀴즈는 교육용이며 의사의 진단이나 복약 지도를 대체하지 않습니다.</p>
+
+    <button id="btn-quiz-continue" class="primary-btn" style="display: none;">다음으로 계속하기 ✨</button>
+  </div>
+</div>
+
+<!-- 게임오버 모달 팝업 -->
+<div class="modal-overlay" id="gameover-modal">
+  <div class="modal-card">
+    <div class="modal-icon">💊✨</div>
+    <h3 class="modal-title" style="color: #e11d48;">연구 종료 (Game Over)</h3>
+    <p class="modal-subtitle">더 이상 블록을 놓을 수 있는 빈자리가 없습니다!</p>
+
+    <div class="gameover-summary">
+      <div class="gameover-row">
+        <span>최종 획득 점수</span>
+        <span id="gameover-final-score" class="highlight">0점</span>
+      </div>
+      <div class="gameover-row">
+        <span>최고 기록 달성</span>
+        <span id="gameover-best-score">0점</span>
+      </div>
+      <div class="gameover-row">
+        <span>도달 레벨</span>
+        <span id="gameover-level">Lv. 1</span>
+      </div>
+      <div class="gameover-row">
+        <span>제약 퀴즈 통계</span>
+        <span id="gameover-quiz-stat">0 / 0 맞춤 (0%)</span>
+      </div>
+    </div>
+
+    <button id="btn-restart-game" class="primary-btn">
+      🔄 다시 도전하기
+    </button>
+  </div>
+</div>
+
+<script>
+/**
+ * 메디컬 블록 챌린지 - Medical Block Challenge
+ * 제약/약학 교육용 10x10 블록 퍼즐 게임
+ */
+
+// --- 1. 제약 블록 테마 정의 (알약, 캡슐, 주사기, 앰플, 실험플라스크 등) ---
+const THEMES = [
+  { name: 'capsule-blue', bg: 'linear-gradient(135deg, #38bdf8, #0284c7)', icon: '💊', color: '#0369a1' },
+  { name: 'capsule-mint', bg: 'linear-gradient(135deg, #34d399, #059669)', icon: '🟢', color: '#047857' },
+  { name: 'syringes', bg: 'linear-gradient(135deg, #818cf8, #4f46e5)', icon: '💉', color: '#4338ca' },
+  { name: 'potion', bg: 'linear-gradient(135deg, #f472b6, #db2777)', icon: '🧪', color: '#be185d' },
+  { name: 'tablet', bg: 'linear-gradient(135deg, #fbbf24, #d97706)', icon: '⚪', color: '#b45309' },
+  { name: 'firstaid', bg: 'linear-gradient(135deg, #f87171, #dc2626)', icon: '🩹', color: '#b91c1c' },
+  { name: 'herb', bg: 'linear-gradient(135deg, #a3e635, #65a30d)', icon: '🌿', color: '#4d7c0f' },
+];
+
+// 다양한 퍼즐 블록 형태 (매트릭스 좌표계)
+const SHAPES = [
+  // 1x1
+  { matrix: [[1]], name: '단일 알약' },
+  // 1x2, 2x1
+  { matrix: [[1, 1]], name: '2단 캡슐(가로)' },
+  { matrix: [[1], [1]], name: '2단 캡슐(세로)' },
+  // 1x3, 3x1
+  { matrix: [[1, 1, 1]], name: '3단 주사기(가로)' },
+  { matrix: [[1], [1], [1]], name: '3단 주사기(세로)' },
+  // 1x4, 4x1
+  { matrix: [[1, 1, 1, 1]], name: '4단 수액관(가로)' },
+  { matrix: [[1], [1], [1], [1]], name: '4단 수액관(세로)' },
+  // 2x2
+  { matrix: [[1, 1], [1, 1]], name: '연구실 키트' },
+  // 3x3
+  { matrix: [[1, 1, 1], [1, 1, 1], [1, 1, 1]], name: '종합 제약 팩' },
+  // L 모양 (4종)
+  { matrix: [[1, 0], [1, 0], [1, 1]], name: 'L자형 앰플' },
+  { matrix: [[0, 1], [0, 1], [1, 1]], name: '역L자형 앰플' },
+  { matrix: [[1, 1, 1], [1, 0, 0]], name: 'ㄱ자형 캡슐' },
+  { matrix: [[1, 1, 1], [0, 0, 1]], name: '역ㄱ자형 캡슐' },
+  // 2x3 직사각형
+  { matrix: [[1, 1, 1], [1, 1, 1]], name: '더블 팩트' },
+  // T 모양
+  { matrix: [[1, 1, 1], [0, 1, 0]], name: 'T자형 측정관' },
+  { matrix: [[0, 1, 0], [1, 1, 1]], name: '역T형 측정관' },
+  // 작은 L자 (2x2 모서리)
+  { matrix: [[1, 1], [1, 0]], name: '미니 L자' },
+  { matrix: [[1, 1], [0, 1]], name: '미니 역L자' },
+  // 계단 모양 (Z / S)
+  { matrix: [[1, 1, 0], [0, 1, 1]], name: 'Z형 분자구조' },
+  { matrix: [[0, 1, 1], [1, 1, 0]], name: 'S형 분자구조' }
+];
+
+// --- 2. 신뢰성 높은 제약/약학 교육 퀴즈 데이터베이스 (15문항) ---
+const QUIZ_DATA = [
+  {
+    category: "약의 개발 과정",
+    question: "새로운 신약이 사람을 대상으로 효과와 안전성을 검증하는 단계를 무엇이라고 할까요?",
+    options: ["전임상 시험", "임상시험 (Clinical Trial)", "유전체 분석", "품질 공정 시험"],
+    answer: 1,
+    explanation: "신약 개발에서 동물 등을 대상으로 안전성을 평가하는 '전임상'을 거친 후, 실제 사람을 대상으로 효과와 안전성을 확인하는 과정을 '임상시험(1~3상)'이라고 합니다."
+  },
+  {
+    category: "의약품 안전 사용",
+    question: "처방받은 항생제 복용에 대한 올바른 설명은 무엇일까요?",
+    options: [
+      "증상이 호전되면 바로 복용을 중단한다.",
+      "처방받은 일수 동안 임의 중단 없이 끝까지 복용해야 내성을 막을 수 있다.",
+      "친구에게 남은 약을 나눠준다.",
+      "물 대신 우유나 탄산음료와 함께 먹는다."
+    ],
+    answer: 1,
+    explanation: "항생제는 중간에 임의로 복용을 중단하면 살아남은 세균이 항생제 내성을 갖게 될 위험이 크므로 처방된 기간 동안 꾸준히 복용해야 합니다."
+  },
+  {
+    category: "약사의 역할",
+    question: "병원이나 약국에서 환자가 복용하는 여러 약물의 중복 및 상호작용을 실시간 확인하는 국가 시스템은?",
+    options: ["DUR (의약품 안전사용서비스)", "KTX 예약망", "GPS 위치서비스", "스마트 밴드"],
+    answer: 0,
+    explanation: "DUR(Drug Utilization Review)은 함께 복용하면 부작용이 생기거나 중복되는 약물을 처방·조제 단계에서 실시간 점검해 주는 안전 시스템입니다."
+  },
+  {
+    category: "의약품 종류",
+    question: "의사의 처방전 없이 약국이나 편의점 등에서 소비자가 직접 구매할 수 있는 의약품은?",
+    options: ["전문의약품", "일반의약품 (OTC)", "항암제", "전신 마취제"],
+    answer: 1,
+    explanation: "의사의 처방이 필요한 '전문의약품'과 달리, 비교적 안전성이 인정되어 처방전 없이 구매할 수 있는 약을 '일반의약품(OTC)'이라고 합니다."
+  },
+  {
+    category: "약의 복용법",
+    question: "대부분의 알약이나 캡슐을 복용할 때 가장 권장되는 음료는 무엇일까요?",
+    options: ["시원한 자몽 주스", "진한 녹차나 커피", "미온수(미지근한 맹물)", "탄산음료"],
+    answer: 2,
+    explanation: "자몽 주스는 약물 대사를 방해할 수 있고, 커피/녹차의 카페인은 약효에 영향을 줄 수 있습니다. 약은 한 컵 분량의 미온수와 함께 삼키는 것이 가장 안전합니다."
+  },
+  {
+    category: "의약품 보관 및 폐기",
+    question: "유통기한이 지난 폐의약품은 어떻게 버려야 환경오염과 안전사고를 막을 수 있을까요?",
+    options: ["하수구에 물과 함께 흘려보낸다.", "일반 쓰레기 종량제 봉투에 음식물과 함께 버린다.", "폐의약품 수거함(약국/보건소/주민센터)에 배출한다.", "플라스틱 분리수거함에 버린다."],
+    answer: 2,
+    explanation: "약품을 하수구에 버리면 하천 생태계를 교란시킬 수 있습니다. 모아서 약국이나 보건소 등의 전용 폐의약품 수거함에 배출해야 합니다."
+  },
+  {
+    category: "제형의 과학",
+    question: "위에서 녹지 않고 장까지 살아서 도달하도록 특수 코팅된 정제를 무엇이라고 부를까요?",
+    options: ["설하정", "장용정 (Enteric-coated)", "발포정", "서방정"],
+    answer: 1,
+    explanation: "'장용정'은 위산에 녹지 않는 코팅이 되어 있어, 위벽을 자극하지 않고 장에 도달해 분해·흡수되도록 설계된 알약입니다."
+  },
+  {
+    category: "약의 작용 원리",
+    question: "약물이 체내에 들어와서 흡수, 분포, 대사, 배설되는 일련의 역동적 과정을 연구하는 약학 분야는?",
+    options: ["약동학 (Pharmacokinetics)", "천체물리학", "식물분류학", "건축공학"],
+    answer: 0,
+    explanation: "약동학(ADME: 흡수 Absorption, 분포 Distribution, 대사 Metabolism, 배설 Excretion)은 인체가 약물을 어떻게 처리하는지를 정량적으로 다룹니다."
+  },
+  {
+    category: "백신과 예방",
+    question: "우리 몸의 면역계가 병원체를 미리 기억하여 실제 감염 시 질병을 예방하게 돕는 의약품은?",
+    options: ["백신 (Vaccine)", "해열진통제", "소화효소제", "스테로이드"],
+    answer: 0,
+    explanation: "백신은 약화되거나 사멸된 항원 등을 주입하여 우리 몸의 면역 체계가 항체를 만들도록 훈련시켜 감염을 방어합니다."
+  },
+  {
+    category: "의약품 안전 상식",
+    question: "아세트아미노펜(대표적 해열진통제 성분)을 복용할 때 각별히 피해야 하는 것은?",
+    options: ["충분한 수분 섭취", "과도한 음주(술)", "충분한 수면", "가벼운 산책"],
+    answer: 1,
+    explanation: "아세트아미노펜은 간에서 대사되므로 술과 함께 복용하면 간 손상 위험이 극도로 높아져 음주 전후 복용을 피해야 합니다."
+  }
+];
+
+// --- 3. Web Audio API 사운드 효과 시스템 (외부 에셋 없이 브라우저 합성) ---
+class SoundController {
+  constructor() {
+    this.ctx = null;
+    this.muted = false;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  toggle() {
+    this.muted = !this.muted;
+    return !this.muted;
+  }
+
+  playTone(freq, type, duration, delay = 0) {
+    if (this.muted) return;
+    this.init();
+    const now = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  playDrop() {
+    this.playTone(320, 'sine', 0.12);
+  }
+
+  playLineClear(combo = 1) {
+    const baseFreq = 440 + (combo * 70);
+    this.playTone(baseFreq, 'triangle', 0.2, 0);
+    this.playTone(baseFreq * 1.25, 'triangle', 0.22, 0.08);
+    this.playTone(baseFreq * 1.5, 'triangle', 0.3, 0.16);
+  }
+
+  playQuizSuccess() {
+    this.playTone(523.25, 'sine', 0.2, 0);
+    this.playTone(659.25, 'sine', 0.2, 0.1);
+    this.playTone(783.99, 'sine', 0.2, 0.2);
+    this.playTone(1046.50, 'triangle', 0.35, 0.3);
+  }
+
+  playQuizFail() {
+    this.playTone(300, 'sawtooth', 0.25, 0);
+    this.playTone(220, 'sawtooth', 0.35, 0.18);
+  }
+
+  playGameOver() {
+    this.playTone(280, 'sine', 0.3, 0);
+    this.playTone(240, 'sine', 0.3, 0.2);
+    this.playTone(190, 'sine', 0.5, 0.4);
+  }
+}
+
+const sounds = new SoundController();
+
+// --- 4. 게임 상태 관리 ---
+const BOARD_SIZE = 10;
+const QUIZ_SCORE_STEP = 250;
+
+let boardState = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('medical_puzzle_best') || '0', 10);
+let currentDockBlocks = [null, null, null];
+let comboCount = 0;
+let nextQuizScoreTarget = QUIZ_SCORE_STEP;
+
+// 퀴즈 통계
+let quizTotalCount = 0;
+let quizCorrectCount = 0;
+let pendingQuiz = null;
+
+// DOM 요소
+const boardEl = document.getElementById('game-board');
+const scoreEl = document.getElementById('ui-score');
+const bestEl = document.getElementById('ui-best');
+const quizRateEl = document.getElementById('ui-quiz-rate');
+const gaugeFillEl = document.getElementById('gauge-fill');
+const gaugeTextEl = document.getElementById('gauge-text');
+const dockSlots = [
+  document.getElementById('slot-0'),
+  document.getElementById('slot-1'),
+  document.getElementById('slot-2')
+];
+const dragProxy = document.getElementById('drag-proxy');
+const soundBtn = document.getElementById('btn-sound');
+const restartBtn = document.getElementById('btn-restart');
+const quizModal = document.getElementById('quiz-modal');
+const gameoverModal = document.getElementById('gameover-modal');
+const btnRestartGame = document.getElementById('btn-restart-game');
+
+// --- 5. 보드 초기 렌더링 ---
+function initBoardDOM() {
+  boardEl.innerHTML = '';
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+function updateStatsUI() {
+  scoreEl.textContent = score.toLocaleString();
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('medical_puzzle_best', bestScore);
+  }
+  bestEl.textContent = bestScore.toLocaleString();
+
+  // 퀴즈 정답률
+  const rate = quizTotalCount === 0 ? 0 : Math.round((quizCorrectCount / quizTotalCount) * 100);
+  quizRateEl.textContent = `${rate}% (${quizCorrectCount}/${quizTotalCount})`;
+
+  // 퀴즈 게이지 바
+  const prevTarget = nextQuizScoreTarget - QUIZ_SCORE_STEP;
+  const progress = Math.min(1, Math.max(0, (score - prevTarget) / QUIZ_SCORE_STEP));
+  gaugeFillEl.style.width = `${progress * 100}%`;
+  gaugeTextEl.textContent = `${score} / ${nextQuizScoreTarget}`;
+}
+
+// --- 6. 대기 블록 생성 및 슬롯 관리 ---
+function getRandomBlock() {
+  const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+  const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
+  return {
+    matrix: shape.matrix,
+    name: shape.name,
+    theme: theme
+  };
+}
+
+function populateDock() {
+  for (let i = 0; i < 3; i++) {
+    if (!currentDockBlocks[i]) {
+      currentDockBlocks[i] = getRandomBlock();
+    }
+  }
+  renderDock();
+  checkDockPlaceableStatus();
+  checkGameOverCondition();
+}
+
+function renderDock() {
+  for (let i = 0; i < 3; i++) {
+    const slot = dockSlots[i];
+    slot.innerHTML = '';
+    const block = currentDockBlocks[i];
+
+    if (!block) {
+      slot.classList.add('empty');
+      continue;
+    }
+    slot.classList.remove('empty');
+
+    const preview = document.createElement('div');
+    preview.className = 'shape-preview';
+    const rows = block.matrix.length;
+    const cols = block.matrix[0].length;
+    preview.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    preview.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = document.createElement('div');
+        if (block.matrix[r][c] === 1) {
+          cell.className = 'preview-cell';
+          cell.style.background = block.theme.bg;
+          cell.textContent = block.theme.icon;
+        } else {
+          cell.style.width = '17px';
+          cell.style.height = '17px';
+        }
+        preview.appendChild(cell);
+      }
+    }
+
+    // 터치 & 마우스 드래그 이벤트 장착
+    attachDragEvents(preview, i);
+    slot.appendChild(preview);
+  }
+}
+
+// 각 슬롯 블록이 현재 보드에 배치 가능한지 체크 (시각적 반투명 처리)
+function checkDockPlaceableStatus() {
+  for (let i = 0; i < 3; i++) {
+    const block = currentDockBlocks[i];
+    const slot = dockSlots[i];
+    if (!block) continue;
+
+    if (canPlaceBlockAnywhere(block.matrix)) {
+      slot.classList.remove('unplaceable');
+    } else {
+      slot.classList.add('unplaceable');
+    }
+  }
+}
+
+function canPlaceBlockAnywhere(matrix) {
+  const rows = matrix.length;
+  const cols = matrix[0].length;
+  for (let r = 0; r <= BOARD_SIZE - rows; r++) {
+    for (let c = 0; c <= BOARD_SIZE - cols; c++) {
+      if (isValidPlacement(matrix, r, c)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function isValidPlacement(matrix, startR, startC) {
+  const rows = matrix.length;
+  const cols = matrix[0].length;
+  if (startR < 0 || startC < 0 || startR + rows > BOARD_SIZE || startC + cols > BOARD_SIZE) {
+    return false;
+  }
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (matrix[r][c] === 1) {
+        if (boardState[startR + r][startC + c] !== null) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// --- 7. 블록 드래그 앤 드롭 시스템 (터치/마우스 완벽 대응) ---
+let activeDrag = null;
+
+function attachDragEvents(element, slotIndex) {
+  const onPointerDown = (e) => {
+    e.preventDefault();
+    sounds.init();
+    const block = currentDockBlocks[slotIndex];
+    if (!block) return;
+
+    activeDrag = {
+      slotIndex: slotIndex,
+      block: block,
+      startX: e.clientX || (e.touches && e.touches[0].clientX),
+      startY: e.clientY || (e.touches && e.touches[0].clientY)
+    };
+
+    setupDragProxy(block);
+    moveDragProxy(activeDrag.startX, activeDrag.startY);
+
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+  };
+
+  element.addEventListener('pointerdown', onPointerDown);
+}
+
+function setupDragProxy(block) {
+  dragProxy.innerHTML = '';
+  const rows = block.matrix.length;
+  const cols = block.matrix[0].length;
+  dragProxy.style.display = 'grid';
+  dragProxy.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
+  dragProxy.style.gridTemplateRows = `repeat(${rows}, 32px)`;
+  dragProxy.style.gap = '3px';
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement('div');
+      if (block.matrix[r][c] === 1) {
+        cell.className = 'preview-cell';
+        cell.style.background = block.theme.bg;
+        cell.textContent = block.theme.icon;
+      } else {
+        cell.style.width = '32px';
+        cell.style.height = '32px';
+      }
+      dragProxy.appendChild(cell);
+    }
+  }
+}
+
+function moveDragProxy(clientX, clientY) {
+  // 모바일에서 손가락에 가려지지 않도록 위로 살짝 오프셋(-65px)
+  dragProxy.style.left = `${clientX}px`;
+  dragProxy.style.top = `${clientY - 65}px`;
+}
+
+function onPointerMove(e) {
+  if (!activeDrag) return;
+  e.preventDefault();
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  moveDragProxy(clientX, clientY);
+
+  // 보드 하이라이트 계산
+  const targetPos = getTargetBoardCell(clientX, clientY - 65, activeDrag.block);
+  clearBoardHighlights();
+
+  if (targetPos) {
+    const valid = isValidPlacement(activeDrag.block.matrix, targetPos.r, targetPos.c);
+    highlightCells(activeDrag.block.matrix, targetPos.r, targetPos.c, valid);
+  }
+}
+
+function onPointerUp(e) {
+  if (!activeDrag) return;
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', onPointerUp);
+
+  const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+  const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+  const targetPos = getTargetBoardCell(clientX, clientY - 65, activeDrag.block);
+
+  dragProxy.style.display = 'none';
+  clearBoardHighlights();
+
+  if (targetPos && isValidPlacement(activeDrag.block.matrix, targetPos.r, targetPos.c)) {
+    placeBlock(activeDrag.slotIndex, activeDrag.block, targetPos.r, targetPos.c);
+  }
+
+  activeDrag = null;
+}
+
+// 드래그 좌표 기반으로 보드의 시작 (r, c) 계산
+function getTargetBoardCell(x, y, block) {
+  const rect = boardEl.getBoundingClientRect();
+  if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+    return null;
+  }
+  const cellSize = rect.width / BOARD_SIZE;
+  const blockW = block.matrix[0].length * cellSize;
+  const blockH = block.matrix.length * cellSize;
+
+  // 손가락 중앙 정렬 오프셋
+  const adjustedX = x - (blockW / 2) + (cellSize / 2);
+  const adjustedY = y - (blockH / 2) + (cellSize / 2);
+
+  const col = Math.round((adjustedX - rect.left) / cellSize);
+  const row = Math.round((adjustedY - rect.top) / cellSize);
+
+  if (row >= 0 && row + block.matrix.length <= BOARD_SIZE &&
+      col >= 0 && col + block.matrix[0].length <= BOARD_SIZE) {
+    return { r: row, c: col };
+  }
+  return null;
+}
+
+function clearBoardHighlights() {
+  const cells = boardEl.querySelectorAll('.grid-cell');
+  cells.forEach(c => {
+    c.classList.remove('highlight-valid', 'highlight-invalid');
+  });
+}
+
+function highlightCells(matrix, startR, startC, isValid) {
+  const rows = matrix.length;
+  const cols = matrix[0].length;
+  const className = isValid ? 'highlight-valid' : 'highlight-invalid';
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (matrix[r][c] === 1) {
+        const cell = getCellDOM(startR + r, startC + c);
+        if (cell) cell.classList.add(className);
+      }
+    }
+  }
+}
+
+function getCellDOM(r, c) {
+  return boardEl.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+}
+
+// --- 8. 블록 보드 배치 및 줄 제거 판정 ---
+function placeBlock(slotIndex, block, startR, startC) {
+  sounds.playDrop();
+  const rows = block.matrix.length;
+  const cols = block.matrix[0].length;
+  let placedCellCount = 0;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (block.matrix[r][c] === 1) {
+        boardState[startR + r][startC + c] = block.theme;
+        renderCell(startR + r, startC + c, block.theme);
+        placedCellCount++;
+      }
+    }
+  }
+
+  // 슬롯 비우기
+  currentDockBlocks[slotIndex] = null;
+
+  // 블록 배치 기본 점수 (셀당 10점)
+  addScore(placedCellCount * 10);
+
+  // 완성된 가로/세로 줄 검사
+  checkLineClears();
+
+  // 모든 슬롯이 비었으면 새로운 3개 블록 지급
+  if (currentDockBlocks.every(b => b === null)) {
+    populateDock();
+  } else {
+    renderDock();
+    checkDockPlaceableStatus();
+    checkGameOverCondition();
+  }
+}
+
+function renderCell(r, c, theme) {
+  const cell = getCellDOM(r, c);
+  if (!cell) return;
+  if (theme) {
+    cell.className = 'grid-cell filled';
+    cell.style.background = theme.bg;
+    cell.innerHTML = `<span class="cell-icon">${theme.icon}</span>`;
+  } else {
+    cell.className = 'grid-cell';
+    cell.style.background = 'var(--cell-empty)';
+    cell.innerHTML = '';
+  }
+}
+
+function checkLineClears() {
+  const rowsToClear = [];
+  const colsToClear = [];
+
+  // 가로줄 검사
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    let full = true;
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (boardState[r][c] === null) {
+        full = false;
+        break;
+      }
+    }
+    if (full) rowsToClear.push(r);
+  }
+
+  // 세로줄 검사
+  for (let c = 0; c < BOARD_SIZE; c++) {
+    let full = true;
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      if (boardState[r][c] === null) {
+        full = false;
+        break;
+      }
+    }
+    if (full) colsToClear.push(c);
+  }
+
+  const totalLines = rowsToClear.length + colsToClear.length;
+
+  if (totalLines > 0) {
+    comboCount++;
+    sounds.playLineClear(comboCount);
+
+    // 중복 제거할 셀 수집
+    const clearedCells = new Set();
+    rowsToClear.forEach(r => {
+      for (let c = 0; c < BOARD_SIZE; c++) clearedCells.add(`${r},${c}`);
+    });
+    colsToClear.forEach(c => {
+      for (let r = 0; r < BOARD_SIZE; r++) clearedCells.add(`${r},${c}`);
+    });
+
+    // 점수 공식: 기본 줄당 100점 + 다중 제거 보너스 + 콤보 보너스
+    const multiBonus = totalLines > 1 ? (totalLines * 60) : 0;
+    const comboBonus = comboCount > 1 ? (comboCount * 50) : 0;
+    const earnedScore = (totalLines * 100) + multiBonus + comboBonus;
+    addScore(earnedScore);
+
+    // 이펙트 표시
+    let bannerMsg = `+${earnedScore}점!`;
+    if (totalLines >= 3) bannerMsg = `🌟 연구 대성공! +${earnedScore}점`;
+    else if (totalLines === 2) bannerMsg = `⚡ 더블 라인! +${earnedScore}점`;
+    if (comboCount > 1) bannerMsg += ` (${comboCount} 콤보🔥)`;
+
+    showFloatingText(bannerMsg);
+
+    // 애니메이션 실행 후 상태 업데이트
+    clearedCells.forEach(coord => {
+      const [r, c] = coord.split(',').map(Number);
+      const cell = getCellDOM(r, c);
+      if (cell) cell.classList.add('clearing');
+    });
+
+    setTimeout(() => {
+      clearedCells.forEach(coord => {
+        const [r, c] = coord.split(',').map(Number);
+        boardState[r][c] = null;
+        renderCell(r, c, null);
+      });
+      checkDockPlaceableStatus();
+      checkGameOverCondition();
+    }, 380);
+  } else {
+    comboCount = 0;
+  }
+}
+
+function showFloatingText(text) {
+  const floatEl = document.createElement('div');
+  floatEl.className = 'floating-text';
+  floatEl.textContent = text;
+  document.getElementById('board-container').appendChild(floatEl);
+
+  setTimeout(() => {
+    floatEl.remove();
+  }, 950);
+}
+
+function addScore(amount) {
+  score += amount;
+  updateStatsUI();
+
+  // 퀴즈 트리거 점수 달성 시 퀴즈 발동
+  if (score >= nextQuizScoreTarget) {
+    nextQuizScoreTarget += QUIZ_SCORE_STEP;
+    setTimeout(() => {
+      triggerQuizModal();
+    }, 450);
+  }
+}
+
+// --- 9. 제약 교육 퀴즈 모달 시스템 ---
+function triggerQuizModal() {
+  const randomQuiz = QUIZ_DATA[Math.floor(Math.random() * QUIZ_DATA.length)];
+  pendingQuiz = randomQuiz;
+  quizTotalCount++;
+
+  document.getElementById('quiz-category').textContent = randomQuiz.category;
+  document.getElementById('quiz-question').textContent = randomQuiz.question;
+  const optionsContainer = document.getElementById('quiz-options');
+  optionsContainer.innerHTML = '';
+
+  document.getElementById('quiz-explanation').style.display = 'none';
+  document.getElementById('btn-quiz-continue').style.display = 'none';
+
+  randomQuiz.options.forEach((optText, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-opt-btn';
+    btn.innerHTML = `<span class="opt-num">${idx + 1}</span> <span>${optText}</span>`;
+    btn.onclick = () => selectQuizAnswer(idx, btn);
+    optionsContainer.appendChild(btn);
+  });
+
+  quizModal.classList.add('active');
+}
+
+function selectQuizAnswer(selectedIndex, selectedBtn) {
+  const quiz = pendingQuiz;
+  if (!quiz) return;
+
+  const buttons = document.querySelectorAll('.quiz-opt-btn');
+  buttons.forEach(b => b.disabled = true);
+
+  const expBox = document.getElementById('quiz-explanation');
+  const expTitle = document.getElementById('quiz-result-title');
+  const expText = document.getElementById('quiz-explanation-text');
+  const continueBtn = document.getElementById('btn-quiz-continue');
+
+  if (selectedIndex === quiz.answer) {
+    // 정답
+    sounds.playQuizSuccess();
+    selectedBtn.classList.add('correct');
+    quizCorrectCount++;
+    addScore(100); // 퀴즈 정답 보너스 100점
+    expTitle.textContent = "🎉 정답입니다! (+100점)";
+    expTitle.style.color = "#059669";
+  } else {
+    // 오답
+    sounds.playQuizFail();
+    selectedBtn.classList.add('wrong');
+    // 정답 보기 강조
+    if (buttons[quiz.answer]) {
+      buttons[quiz.answer].classList.add('correct');
+    }
+    expTitle.textContent = "❌ 아쉽네요! 정답을 확인해 보세요.";
+    expTitle.style.color = "#e11d48";
+  }
+
+  expText.textContent = quiz.explanation;
+  expBox.style.display = 'block';
+  continueBtn.style.display = 'flex';
+  updateStatsUI();
+}
+
+document.getElementById('btn-quiz-continue').onclick = () => {
+  quizModal.classList.remove('active');
+  pendingQuiz = null;
+  checkDockPlaceableStatus();
+  checkGameOverCondition();
+};
+
+// --- 10. 게임 오버 판정 및 처리 ---
+function checkGameOverCondition() {
+  // 남아있는 모든 도크 블록 중 하나라도 놓을 수 있는 자리가 있으면 게임 계속
+  const activeBlocks = currentDockBlocks.filter(b => b !== null);
+  if (activeBlocks.length === 0) return;
+
+  const hasAnyMove = activeBlocks.some(block => canPlaceBlockAnywhere(block.matrix));
+
+  if (!hasAnyMove) {
+    sounds.playGameOver();
+    showGameOverModal();
+  }
+}
+
+function showGameOverModal() {
+  document.getElementById('gameover-final-score').textContent = `${score.toLocaleString()}점`;
+  document.getElementById('gameover-best-score').textContent = `${bestScore.toLocaleString()}점`;
+  
+  const level = Math.floor(score / 300) + 1;
+  document.getElementById('gameover-level').textContent = `Lv. ${level} 수석 연구원`;
+
+  const rate = quizTotalCount === 0 ? 0 : Math.round((quizCorrectCount / quizTotalCount) * 100);
+  document.getElementById('gameover-quiz-stat').textContent = `${quizCorrectCount} / ${quizTotalCount} 맞춤 (${rate}%)`;
+
+  gameoverModal.classList.add('active');
+}
+
+// --- 11. 게임 재시작 및 이벤트 바인딩 ---
+function resetGame() {
+  boardState = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
+  score = 0;
+  comboCount = 0;
+  nextQuizScoreTarget = QUIZ_SCORE_STEP;
+  quizTotalCount = 0;
+  quizCorrectCount = 0;
+  currentDockBlocks = [null, null, null];
+
+  gameoverModal.classList.remove('active');
+  quizModal.classList.remove('active');
+
+  initBoardDOM();
+  updateStatsUI();
+  populateDock();
+}
+
+soundBtn.onclick = () => {
+  const active = sounds.toggle();
+  soundBtn.textContent = active ? '🔔' : '🔕';
+  soundBtn.title = active ? '소리 켜짐' : '음소거';
+};
+
+restartBtn.onclick = () => {
+  if (confirm('게임을 새로 시작하시겠습니까? 현재 점수는 초기화됩니다.')) {
+    resetGame();
+  }
+};
+
+btnRestartGame.onclick = () => {
+  resetGame();
+};
+
+// 최초 초기화 실행
+window.onload = () => {
+  initBoardDOM();
+  updateStatsUI();
+  populateDock();
+};
+</script>
+</body>
+</html>
+
